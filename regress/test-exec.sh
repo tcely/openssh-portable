@@ -1,4 +1,4 @@
-#	$OpenBSD: test-exec.sh,v 1.79 2021/04/06 23:57:56 dtucker Exp $
+#	$OpenBSD: test-exec.sh,v 1.82 2021/06/10 09:37:59 dtucker Exp $
 #	Placed in the Public Domain.
 
 #SUDO=sudo
@@ -100,6 +100,7 @@ CONCH=conch
 
 # Tools used by multiple tests
 NC=$OBJ/netcat
+OPENSSL="${OPENSSL:-openssl}"
 
 if [ "x$TEST_SSH_SSH" != "x" ]; then
 	SSH="${TEST_SSH_SSH}"
@@ -154,6 +155,9 @@ if [ "x$TEST_SSH_PKCS11_HELPER" != "x" ]; then
 fi
 if [ "x$TEST_SSH_SK_HELPER" != "x" ]; then
 	SSH_SK_HELPER="${TEST_SSH_SK_HELPER}"
+fi
+if [ "x$TEST_SSH_OPENSSL" != "x" ]; then
+	OPENSSL="${TEST_SSH_OPENSSL}"
 fi
 
 # Path to sshd must be absolute for rexec
@@ -323,6 +327,8 @@ md5 () {
 		cksum
 	elif have_prog sum; then
 		sum
+	elif [ -x ${OPENSSL} ]; then
+		${OPENSSL} md5
 	else
 		wc -c
 	fi
@@ -595,7 +601,7 @@ for t in ${SSH_HOSTKEY_TYPES}; do
 	) >> $OBJ/known_hosts
 
 	# use key as host key, too
-	$SUDO cp $OBJ/$t $OBJ/host.$t
+	(umask 077; $SUDO cp $OBJ/$t $OBJ/host.$t)
 	echo HostKey $OBJ/host.$t >> $OBJ/sshd_config
 
 	# don't use SUDO for proxy connect
